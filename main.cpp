@@ -20,7 +20,7 @@ const float THRESHOLD = 0.6;             // naikkan jika garis terlalu ramai
 const float SPEED = 2.0;                 // kedip per detik
 const vec3 COLOR = vec3(1.0, 0.9, 0.0);  // kuning
 
-// nilai terang + alpha, agar tepi transparan ikut terdeteksi
+// Nilai terang + alpha, agar tepi transparan ikut terdeteksi.
 float value(vec2 uv) {
     vec4 c = texture(texture0, clamp(uv, 0.0, 1.0));
     return dot(c.rgb, vec3(0.299, 0.587, 0.114)) * c.a + c.a;
@@ -30,17 +30,16 @@ void main() {
     vec4 base = texture(texture0, fragTexCoord) * colDiffuse * fragColor;
     vec2 t = THICKNESS / vec2(textureSize(texture0, 0));
 
+    // Empat sampel diagonal menggantikan delapan sampel Sobel.
+    // Ini mengurangi pembacaan tekstur untuk deteksi outline tanpa mengubah
+    // warna dasar, efek kedip, atau rendering layer lainnya.
     float tl = value(fragTexCoord + t * vec2(-1.0, -1.0));
-    float tc = value(fragTexCoord + t * vec2( 0.0, -1.0));
     float tr = value(fragTexCoord + t * vec2( 1.0, -1.0));
-    float ml = value(fragTexCoord + t * vec2(-1.0,  0.0));
-    float mr = value(fragTexCoord + t * vec2( 1.0,  0.0));
     float bl = value(fragTexCoord + t * vec2(-1.0,  1.0));
-    float bc = value(fragTexCoord + t * vec2( 0.0,  1.0));
     float br = value(fragTexCoord + t * vec2( 1.0,  1.0));
 
-    float gx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
-    float gy = (bl + 2.0 * bc + br) - (tl + 2.0 * tc + tr);
+    float gx = (tr + br) - (tl + bl);
+    float gy = (bl + br) - (tl + tr);
 
     float edge = smoothstep(THRESHOLD, THRESHOLD + 0.2, length(vec2(gx, gy)));
     float blink = 0.5 + 0.5 * sin(time * SPEED * 6.28318);
